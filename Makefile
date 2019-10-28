@@ -23,7 +23,7 @@ endef
 #
 .PHONY: build
 build:
-	env CGO_ENABLED=0 go build -o out/targz -gcflags "-trimpath $(shell pwd)"  --ldflags '-s -w $(version_flags)' $(MODULE)
+	env CGO_ENABLED=0 go build -trimpath -o out/targz -gcflags "-trimpath $(shell pwd)"  --ldflags '-s -w $(version_flags)' $(MODULE)
 
 .PHONY: ensure
 ensure:
