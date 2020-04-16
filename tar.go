@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -16,7 +17,7 @@ import (
 // Tar takes a source and variable writers and walks 'source' writing each file
 // found to the tar writer; the purpose for accepting multiple writers is to allow
 // for multiple outputs (for example a file, or md5 hash)
-func Tar(src string, writer io.Writer, excludes []string) error {
+func Tar(src string, writer io.Writer, excludes []string, after time.Time) error {
 
 	source, err := filepath.Abs(src)
 	if err != nil {
@@ -52,7 +53,7 @@ func Tar(src string, writer io.Writer, excludes []string) error {
 
 		for _, exclude := range excludes {
 			if matched, _ := regexp.MatchString(exclude, filePath); matched {
-				log.Infow("Skipped", zap.String("file", filePath))
+				log.Debugw("Skipped", zap.String("file", filePath))
 				return nil
 			}
 		}
@@ -64,6 +65,13 @@ func Tar(src string, writer io.Writer, excludes []string) error {
 		if err != nil {
 			log.Warn(err)
 			return err
+		}
+
+		// To use AccessTime or ChangeTime, specify the Format as PAX or GNU.
+		// To use sub-second resolution, specify the Format as PAX.
+		if header.ModTime.Before(after) {
+			log.Debugw("Skipped due modified-date", zap.String("file", filePath))
+			return nil
 		}
 
 		// update the name to correctly reflect the desired destination when untaring
